@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Evolution and Biodiversity: Interactive Lab</title>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--tx:#1d2330;--mut:#5d6575;--bd:#cfccc2;--ac:#0f766e;--hi:#c2410c;--glow:#fde68a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171d;--card:#1e232c;--tx:#e8eaee;--mut:#9aa3b2;--bd:#3d4554;--ac:#2dd4bf;--hi:#fb923c;--glow:#5b4a12}}
+:root[data-theme="dark"]{--bg:#14171d;--card:#1e232c;--tx:#e8eaee;--mut:#9aa3b2;--bd:#3d4554;--ac:#2dd4bf;--hi:#fb923c;--glow:#5b4a12}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:960px;margin:0 auto;padding:14px}
+h1{font-size:1.4rem;margin:0}h2{font-size:1.05rem;margin:0 0 6px}.sub{color:var(--mut);font-size:.9rem}
+.tabs,.cs,.ctl{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:8px 0}
+button{font:inherit;cursor:pointer;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:8px;padding:6px 12px}
+button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px}
+.pn{display:none}.pn.on{display:block}
+.note{margin-top:8px;padding:8px 10px;background:var(--glow);border-radius:8px;min-height:3.2em}
+.dots i{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--bd);margin-right:4px}.dots i.on{background:var(--ac)}
+svg,canvas{width:100%;height:auto;display:block}
+ul{margin:4px 0;padding-left:20px}li{margin:3px 0}
+input[type=range]{width:100%;max-width:340px}label{font-size:.9rem}
+.t{font:12px system-ui;fill:var(--tx)}.m{font:11px system-ui;fill:var(--mut)}
+.mono{font:600 14px ui-monospace,Menlo,monospace}
+.big{font-size:1.3rem;font-weight:700;color:var(--ac)}
+table{border-collapse:collapse;font-size:.85rem}th,td{border:1px solid var(--bd);padding:3px 10px;text-align:center}
+.pill{display:inline-block;width:14px;height:14px;border-radius:50%;margin:2px;transition:all .6s;border:1px solid var(--bd)}.pill.dead{opacity:.15;transform:scale(.6)}
+</style></head><body><main>
+<h1>Evolution and biodiversity lab</h1>
+<div class="sub">Choose a topic, then use the buttons, sliders and chips. All data values are simplified or illustrative.</div>
+<div class="tabs" id="tabs"></div><div id="panels"></div>
+</main>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const ctl=(p,a)=>`<div class="ctl"><button id="${p}-prev">◀ Back</button><button id="${p}-next" class="on">Next ▶</button>${a?`<button id="${p}-auto">▶ Auto-play</button>`:''}<button id="${p}-rst">↺ Reset</button><span class="dots" id="${p}-dots"></span></div><div class="note" id="${p}-note"></div>`;
+function stepper(p,max,render,notes,ms=2800){let s=0,tm=null;$(`#${p}-dots`).innerHTML='<i></i>'.repeat(max+1);
+ const stop=()=>{clearInterval(tm);tm=null;const a=$(`#${p}-auto`);if(a)a.textContent='▶ Auto-play'};
+ const go=n=>{s=Math.max(0,Math.min(max,n));render(s);$$(`#${p}-dots i`).forEach((x,i)=>x.classList.toggle('on',i==s));$(`#${p}-note`).innerHTML=notes[s];if(s==max)stop()};
+ $(`#${p}-prev`).onclick=()=>{stop();go(s-1)};$(`#${p}-next`).onclick=()=>{stop();go(s+1)};$(`#${p}-rst`).onclick=()=>{stop();go(0)};
+ const a=$(`#${p}-auto`);if(a)a.onclick=()=>{if(tm)return stop();if(s>=max)go(0);a.textContent='⏸ Pause';tm=setInterval(()=>go(s+1),ms)};go(0)}
+const chips=(id,items,fn)=>{const e=$(id);e.innerHTML=items.map(t=>`<button>${t}</button>`).join('');const b=[...e.children];b.forEach((x,i)=>x.onclick=()=>{b.forEach(y=>y.classList.remove('on'));x.classList.add('on');fn(i)});b[0].click()};
+const fade=(b,x)=>`<g opacity="0"><animate attributeName="opacity" to="1" begin="${b}s" dur=".5s" fill="freeze"/>${x}</g>`;
+const kp=l=>`<div class="card"><b>Key points</b><ul>${l.map(x=>`<li>${x}</li>`).join('')}</ul></div>`;
+const TX=(x,y,t,c='t',a='middle')=>`<text class="${c}" x="${x}" y="${y}" text-anchor="${a}">${t}</text>`;
+
+const PN=[
+/* 1 */`<div class="card"><h2>1 · Origins and history of life</h2><div id="o-sv"></div>${ctl('o',1)}</div>${kp(['Life has existed for about 3.5 billion years and has diversified through evolution; all existing cells result from evolution.','The first cells may have used RNA as genetic material before DNA became dominant. Ribozymes can store information (sequence) and act as catalysts.','Prokaryotes came before eukaryotes (fossil evidence, simpler structure).','Mitochondria and chloroplasts probably began as free-living prokaryotes taken into larger host cells (endosymbiosis).'])}`,
+/* 2 */`<div class="card"><h2>DNA–DNA hybridisation</h2><div class="cs" id="h-c"></div><div id="h-sv"></div><label>Heat: <b id="h-t"></b> °C<br><input type="range" id="h-r" min="20" max="100" value="20"></label><div class="note" id="h-n"></div></div>
+<div class="card"><h2>Comparing proteins and building a phylogenetic tree</h2><table id="cy"></table><div class="ctl"><button id="tr-b" class="on">▶ Build tree from the data</button></div><div id="tr-sv"></div><div class="note">Cytochrome c differences from human (approximate/illustrative). Branch length reflects the number of differences. Closely related species have fewer differences. Trees show common ancestry, relatedness and how lineages diverged.</div></div>
+<div class="card"><h2>Mutation and the molecular clock</h2><label>Differences between two species (per 1000 bases): <b id="mc-d"></b><br><input type="range" id="mc-dr" min="1" max="100" value="20"></label><br><label>Mutation rate (per 1000 bases per million years, per lineage): <b id="mc-r"></b><br><input type="range" id="mc-rr" min="1" max="20" value="5"></label><div id="mc-sv"></div><div class="note" id="mc-n"></div></div>
+${kp(['Comparative genomics compares DNA and proteins; fewer differences means closer relationship.','Molecular evidence: common proteins (cytochromes), DNA–DNA hybridisation, DNA sequencing, rRNA gene sequencing in prokaryotes.','If the mutation rate is known, accumulated mutations act as a molecular clock to estimate time since a common ancestor (assumes a steady rate).'])}`,
+/* 3 */`<div class="card"><h2>What is a species?</h2><div class="cs" id="sp-c"></div><div class="note" id="sp-n"></div></div>
+<div class="card"><h2>Reproductive isolation: where is gene flow blocked?</h2><div class="cs" id="iso-c"></div><div id="iso-sv"></div><div class="note" id="iso-n"></div></div>
+${kp(['Species definition depends on the mode of reproduction; for sexual species: actually or potentially interbreed and produce fertile offspring.','Other criteria: morphological, biochemical, common gene pool.','Isolating mechanisms prevent gene flow and support speciation. Pre-zygotic: temporal, behavioural, mechanical, gamete. Post-zygotic: hybrid inviability, hybrid sterility.'])}`,
+/* 4 */`<div class="card"><h2>Sources of variation</h2><div class="cs" id="va-c"></div><div class="note" id="va-n"></div><label>Chromosome pairs (n): <b id="ia-n"></b><br><input type="range" id="ia-r" min="1" max="23" value="3"></label><div>Gamete types: <span class="big" id="ia-g"></span> · Random fertilisation combinations: <span class="big" id="ia-z"></span></div></div>
+<div class="card"><h2>Natural selection, genetic drift and the gene pool</h2><div class="sub">Simplified: one gene, two alleles. Brown beetles are easy for predators to see on green leaves.</div>
+<div class="ctl"><label>Population size <select id="sn"><option>10</option><option selected>50</option><option>200</option></select></label><label>Selection against brown: <b id="ssv">0</b>%<input type="range" id="ss" min="0" max="50" value="0"></label></div>
+<div class="ctl"><button id="s1" class="on">Next generation</button><button id="s20">Run 20</button><button id="sm">Mutate 1 beetle</button><button id="sr">↺ Reset</button></div><canvas id="cv" width="600" height="230"></canvas><div class="note" id="sim-n"></div></div>
+${kp(['A mutation is a permanent change in the DNA sequence; it is the ultimate source of variation.','Sexual reproduction adds crossing over, independent assortment and random fertilisation.','A large gene pool means high diversity and better chances of surviving selection pressures.','Natural selection: better adapted organisms survive and reproduce more, changing allele frequencies. Genetic drift (chance) matters most in small populations.'])}`,
+/* 5 */`<div class="card"><h2>Allopatric speciation</h2><div id="al-sv"></div>${ctl('al',1)}</div>
+<div class="card"><h2>Patterns of evolution</h2><div class="cs" id="pt-c"></div><div id="pt-sv"></div><div class="note" id="pt-n"></div></div>
+${kp(['Allopatric speciation: geographic isolation, then different selection pressures or drift cause divergence until reproductive isolation.','Divergent evolution: related species become more different. Adaptive radiation: one ancestor gives many species in different environments.','Convergent evolution: unrelated species evolve similar traits under similar selection pressures.'])}`,
+/* 6 */`<div class="card"><h2>Succession</h2><div class="cs" id="su-c"></div><label>Time: <b id="su-l"></b><br><input type="range" id="su-r" min="0" max="4" value="0"></label><div id="su-sv"></div><div class="note" id="su-n"></div></div>
+<div class="card"><h2>Genetic diversity and extinction risk</h2><label>Environmental change (e.g. warming): <b id="ex-v"></b><br><input type="range" id="ex-r" min="50" max="100" value="50"></label>
+<div><b>Low-diversity population</b><br><span id="ex-lo"></span> <span id="ex-lc"></span></div><div><b>High-diversity population</b><br><span id="ex-hi"></span> <span id="ex-hc"></span></div><div class="note">Each dot is an individual with a heritable trait. Survivors are those whose trait suits the new environment. The diverse population keeps some survivors; the uniform one may be wiped out.</div></div>
+<div class="card"><h2>Human impacts and ethics</h2><div class="cs" id="hu-c"></div><div class="note" id="hu-n"></div></div>
+${kp(['Succession: gradual change in species composition. Primary: little or no soil. Secondary: community disturbed but soil remains.','Low genetic diversity limits adaptation to new selection pressures, increasing extinction risk.','Climate change, habitat destruction, pollution and other changes can outpace adaptation. Maintaining biodiversity is an ethical issue, and humans have a responsibility to prevent extinction.'])}`];
+$('#panels').innerHTML=PN.map((h,i)=>`<section class="pn" id="p${i}">${h}</section>`).join('');
+$('#tabs').innerHTML=['1 Origins','2 Molecular evidence','3 Species & isolation','4 Variation & selection','5 Speciation & patterns','6 Succession & extinction'].map((t,i)=>`<button onclick="tab(${i})">${t}</button>`).join('');
+function tab(i){$$('.pn').forEach((p,k)=>p.classList.toggle('on',k==i));$$('#tabs button').forEach((b,k)=>b.classList.toggle('on',k==i))}
+
+/* ===== 1 origins ===== */
+function oSvg(s){let o='<svg viewBox="0 0 600 240">';
+ if(s==0){o+=`<line x1="40" y1="120" x2="560" y2="120" stroke="var(--mut)" stroke-width="3"/>`;for(let i=0;i<6;i++){const x=60+i*96,r=6+i*3;o+=fade(i*.5,`<circle cx="${x}" cy="120" r="${r}" fill="${i>3?'#bfdbfe':'#bbf7d0'}" stroke="var(--tx)"/>${i>3?`<circle cx="${x}" cy="120" r="${r/2.5}" fill="#6366f1"/>`:''}`)}
+  o+=TX(60,180,'3.5 billion years ago','t')+TX(540,180,'today','t')+TX(300,60,'Diversification through evolution','m')}
+ if(s==1){for(let i=0;i<20;i++){const a=i/20*6.283,c=Math.cos(a),n=Math.sin(a),P=(r)=>`${300+r*c} ${120+r*n}`;o+=fade(i*.12,`<line x1="${300+70*c}" y1="${120+70*n}" x2="${300+60*c}" y2="${120+60*n}" stroke="#d97706" stroke-width="2"/><circle cx="${300+72*c}" cy="${120+72*n}" r="5" fill="#f59e0b"/><line x1="${300+50*c}" y1="${120+50*n}" x2="${300+60*c}" y2="${120+60*n}" stroke="#d97706" stroke-width="2"/><circle cx="${300+48*c}" cy="${120+48*n}" r="5" fill="#f59e0b"/>`)}
+  o+=TX(300,124,'Vesicle','t')+TX(300,22,'Phospholipids assemble into a bilayer spontaneously','m')}
+ if(s==2){o+=`<circle cx="300" cy="125" r="100" fill="rgba(147,197,253,.15)" stroke="var(--tx)" stroke-width="3"/><text class="mono" x="300" y="95" text-anchor="middle" fill="#c2410c">G C A U G G C U A A C</text>${TX(300,75,'RNA sequence stores information','m')}
+  <ellipse cx="330" cy="150" rx="34" ry="20" fill="#c4b5fd" stroke="var(--tx)"/>${TX(330,154,'ribozyme','t')}${TX(300,215,'Ribozyme: RNA that catalyses a reaction (substrate → product)','m')}
+  <circle r="7" fill="#3b82f6"><animateMotion path="M235 175 L320 150 L395 178" dur="3s" repeatCount="indefinite"/><animate attributeName="fill" values="#3b82f6;#3b82f6;#ef4444;#ef4444" keyTimes="0;.45;.55;1" dur="3s" repeatCount="indefinite"/></circle>`}
+ if(s==3){o+=`<rect x="30" y="50" width="220" height="100" rx="30" fill="#bbf7d0" stroke="var(--tx)" stroke-width="2"/><path d="M110 100 q20-30 40 0 t40 0" fill="none" stroke="#7c3aed" stroke-width="3"/>${TX(140,40,'Prokaryote: no nucleus, simpler','t')}
+  <ellipse cx="450" cy="100" rx="120" ry="70" fill="#bfdbfe" stroke="var(--tx)" stroke-width="2"/><circle cx="430" cy="95" r="26" fill="#6366f1"/><ellipse cx="500" cy="120" rx="18" ry="10" fill="#fdba74"/><ellipse cx="480" cy="70" rx="14" ry="8" fill="#86efac"/>${TX(450,28,'Eukaryote: nucleus + organelles','t')}
+  <path d="M260 100 L320 100" stroke="var(--mut)" stroke-width="3" marker-end="url(#a)"/>${TX(290,92,'later','m')}<defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#8a909c"/></marker></defs>
+  <rect x="30" y="178" width="540" height="14" fill="#a8a29e"/><rect x="30" y="192" width="540" height="14" fill="#78716c"/><rect x="30" y="206" width="540" height="14" fill="#57534e"/><ellipse cx="90" cy="213" rx="12" ry="4" fill="#d6d3d1"/>${TX(300,172,'Fossil evidence: oldest rock layers hold prokaryote fossils','m')}`}
+ if(s>=4){o+=`<ellipse cx="300" cy="125" rx="170" ry="95" fill="#e0f2fe" stroke="var(--tx)" stroke-width="2"/><circle cx="240" cy="95" r="30" fill="#818cf8"/>${TX(240,99,'nucleus','t')}`;
+  if(s==4)o+=`<ellipse cx="60" cy="150" rx="26" ry="14" fill="#fdba74" stroke="var(--tx)"><animate attributeName="cx" from="60" to="340" dur="2.5s" fill="freeze"/></ellipse>
+   <g opacity="0"><set attributeName="opacity" to="1" begin="2.5s"/><path d="M322 150 q6-8 12 0 t12 0 t12 0" fill="none" stroke="#9a3412" stroke-width="2"/>${TX(340,200,'Mitochondrion: engulfed aerobic prokaryote','t')}</g>${TX(80,185,'free-living prokaryote','m')}`;
+  else o+=`<ellipse cx="340" cy="150" rx="26" ry="14" fill="#fdba74" stroke="var(--tx)"/><path d="M322 150 q6-8 12 0 t12 0 t12 0" fill="none" stroke="#9a3412" stroke-width="2"/><ellipse cx="560" cy="60" rx="24" ry="14" fill="#86efac" stroke="var(--tx)"><animate attributeName="cx" from="580" to="380" dur="2.5s" fill="freeze"/><animate attributeName="cy" from="60" to="85" dur="2.5s" fill="freeze"/></ellipse><g opacity="0"><set attributeName="opacity" to="1" begin="2.5s"/><path d="M368 85 h24 M368 90 h24 M368 80 h24" stroke="#166534" stroke-width="3"/>${TX(380,50,'Chloroplast: engulfed photosynthetic prokaryote','t')}</g>`}
+ return o+'</svg>'}
+stepper('o',5,s=>$('#o-sv').innerHTML=oSvg(s),['Evidence indicates life has existed for about 3.5 billion years, diversifying through evolution.','Early membranes may have formed spontaneously from phospholipids.','The first cells may have used RNA as genetic material. Ribozymes both store information in their sequence and catalyse reactions, so RNA may have preceded DNA and proteins.','Prokaryotes existed before eukaryotes: fossil evidence and their simpler structure support this.','Endosymbiosis (1): a host cell engulfed an aerobic prokaryote that became the mitochondrion (supporting features: double membrane, own circular DNA).','Endosymbiosis (2): a host cell engulfed a photosynthetic prokaryote that became the chloroplast.'],3300);
+
+/* ===== 2 molecular ===== */
+const REF='ATGCCGTAAGCTTGCAACGT',MM=[[7],[3,7,12,17],[1,3,5,7,9,12,15,17,19]],NM=['Human + Chimpanzee','Human + Mouse','Human + Yeast'];let hp=0;
+const cp=b=>({A:'T',T:'A',G:'C',C:'G'})[b];
+function hybSvg(){const mm=MM[hp];let a='',b='',l='';[...REF].forEach((c,i)=>{const x=60+i*24,bad=mm.includes(i),d=bad?({A:'G',T:'C',G:'A',C:'T'})[c]:cp(c);
+ a+=`<text class="mono" x="${x}" y="70" text-anchor="middle" fill="#2563eb">${c}</text>`;b+=`<text class="mono" x="${x}" y="150" text-anchor="middle" fill="${bad?'#dc2626':'#15803d'}">${d}</text>`;
+ l+=`<line x1="${x}" y1="80" x2="${x}" y2="${bad?95:132}" stroke="${bad?'#dc2626':'#15803d'}" stroke-width="2" stroke-dasharray="${bad?'2 3':'0'}"/>`});
+ $('#h-sv').innerHTML=`<svg viewBox="0 0 600 220"><g id="ha" style="transition:transform .6s">${a}${TX(30,70,'Human','m')}</g><g id="hl" style="transition:opacity .6s">${l}</g><g id="hb" style="transition:transform .6s">${b}${TX(30,150,NM[hp].split(' + ')[1],'m')}</g>${TX(300,205,'Red = mismatched bases (fewer hydrogen bonds). Mismatches: '+mm.length+' of 20','m')}</svg>`;hu()}
+function hu(){const h=+$('#h-r').value,mm=MM[hp].length,tm=92-3*mm,sep=h>tm;$('#h-t').textContent=h;
+ $('#ha').style.transform=`translateY(${sep?-30:0}px)`;$('#hb').style.transform=`translateY(${sep?30:0}px)`;$('#hl').style.opacity=sep?0:1;
+ $('#h-n').textContent=`${NM[hp]}: ${20-mm} of 20 base pairs match. Strands separate at about ${tm} °C (illustrative). ${sep?'Heated past this: the strands have separated.':'Raise the heat to separate them.'} More similar DNA means more hydrogen bonds, a higher separation temperature, and a closer relationship.`}
+chips('#h-c',NM,i=>{hp=i;hybSvg()});$('#h-r').oninput=hu;
+const CY=[['Chimpanzee',0],['Mouse',10],['Chicken',13],['Yeast',44]];
+$('#cy').innerHTML='<tr><th>Species</th>'+CY.map(c=>`<th>${c[0]}</th>`).join('')+'</tr><tr><td>Differences from human</td>'+CY.map(c=>`<td>${c[1]}</td>`).join('')+'</tr>';
+function tree(){const L=[[530,40,530,80],[433,60,433,130],[401,95,401,180],[70,137,70,225]],H=[[530,40,540,40],[530,80,540,80],[433,60,530,60],[433,130,540,130],[401,95,433,95],[401,180,540,180],[70,137,401,137],[70,225,540,225]];
+ let s='<svg viewBox="0 0 640 250">';[...L,...H].forEach(([a,b,c,d],i)=>s+=`<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" pathLength="1" stroke="var(--ac)" stroke-width="3" stroke-dasharray="1" stroke-dashoffset="1"><animate attributeName="stroke-dashoffset" to="0" begin="${i*.35}s" dur=".5s" fill="freeze"/></line>`);
+ [['Human',40],['Chimpanzee',80],['Mouse',130],['Chicken',180],['Yeast',225]].forEach(([n,y])=>s+=`<text class="t" x="546" y="${y+4}">${n}</text>`);
+ s+=TX(70,245,'older ← → present','m','start');$('#tr-sv').innerHTML=s+'</svg>'}
+$('#tr-b').onclick=tree;tree();
+function mc(){const d=+$('#mc-dr').value,r=+$('#mc-rr').value/10,T=d/(2*r);$('#mc-d').textContent=d;$('#mc-r').textContent=r.toFixed(1);const h=Math.min(150,T*1.2);
+ $('#mc-sv').innerHTML=`<svg viewBox="0 0 600 190"><line x1="300" y1="170" x2="${300-h*.6}" y2="${170-h}" stroke="var(--ac)" stroke-width="5"/><line x1="300" y1="170" x2="${300+h*.6}" y2="${170-h}" stroke="var(--hi)" stroke-width="5"/><circle cx="300" cy="170" r="7" fill="var(--tx)"/>${TX(300,188,'common ancestor','m')}${TX(300-h*.6,165-h,'Species A','t')}${TX(300+h*.6,165-h,'Species B','t')}</svg>`;
+ $('#mc-n').textContent=`Time since common ancestor ≈ differences ÷ (2 × rate) = ${d} ÷ (2 × ${r.toFixed(1)}) ≈ ${Math.round(T)} million years. Both lineages accumulate mutations, so the rate is doubled. This assumes a constant mutation rate.`}
+$('#mc-dr').oninput=$('#mc-rr').oninput=mc;mc();
+
+/* ===== 3 species ===== */
+const SPC=[['Biological','Members actually or potentially interbreed and produce fertile offspring (sexually reproducing organisms).'],['Morphological','Individuals share similar form and structure.'],['Biochemical','Individuals share similar proteins, DNA or biochemistry.'],['Gene pool','A group sharing a common gene pool: alleles are exchanged within it, not outside it.']];
+chips('#sp-c',SPC.map(x=>x[0]),i=>$('#sp-n').textContent=SPC[i][1]+(i?'':' This cannot be applied to asexual organisms, so other criteria are used.'));
+const ISO=[['Temporal','Pre-zygotic: species breed at different times (day, season or year), so they never meet to mate.'],['Behavioural','Pre-zygotic: courtship signals or calls are not recognised by the other species.'],['Mechanical','Pre-zygotic: reproductive structures do not fit together (e.g. flower and pollinator shapes).'],['Gamete','Pre-zygotic: sperm and egg (or pollen and stigma) are incompatible, so no zygote forms.'],['Hybrid inviability','Post-zygotic: a hybrid zygote forms but the embryo fails to develop or dies early.'],['Hybrid sterility','Post-zygotic: the hybrid survives but cannot produce functional gametes (e.g. a mule).']];
+const ST=['Meet at the same time','Recognise courtship','Mate successfully','Gametes fuse','Hybrid develops','Hybrid breeds'];
+chips('#iso-c',ISO.map(x=>x[0]),k=>{let s='<svg viewBox="0 0 640 170">';ST.forEach((t,i)=>{const x=10+i*105,bad=i==k,after=i>k;
+ s+=`<rect x="${x}" y="40" width="92" height="64" rx="8" fill="${bad?'#fecaca':after?'var(--bg)':'#bbf7d0'}" stroke="${bad?'#dc2626':'var(--bd)'}" stroke-width="2"/>`+lines(t,x+46)+(bad?TX(x+46,128,'✖ blocked','t')+`<text x="${x+46}" y="26" text-anchor="middle" class="t" fill="#dc2626">${ISO[k][0]}</text>`:'');if(i<5)s+=`<text x="${x+98}" y="76" class="m" text-anchor="middle">→</text>`});
+ s+=`<line x1="10" y1="150" x2="410" y2="150" stroke="#2563eb" stroke-width="3"/><text class="m" x="210" y="165" text-anchor="middle">pre-zygotic: before fertilisation</text><line x1="430" y1="150" x2="630" y2="150" stroke="#9333ea" stroke-width="3"/><text class="m" x="530" y="165" text-anchor="middle">post-zygotic</text>`;
+ $('#iso-sv').innerHTML=s+'</svg>';$('#iso-n').textContent=ISO[k][1]+' Gene flow between the populations is prevented, which helps keep the species distinct.'});
+function lines(t,x){const w=t.split(' ');const h=Math.ceil(w.length/2);return [w.slice(0,h).join(' '),w.slice(h).join(' ')].map((l,i)=>TX(x,66+i*15,l,'t')).join('')}
+
+/* ===== 4 variation + simulation ===== */
+const VA=[['Mutation','A permanent change in the DNA sequence. It creates new alleles, so it is the ultimate source of variation.'],['Crossing over','In meiosis (prophase I), homologous chromosomes swap segments, creating new allele combinations on chromosomes.'],['Independent assortment','Homologous pairs line up randomly in meiosis I, so gametes get different mixes of maternal and paternal chromosomes (2ⁿ types).'],['Random fertilisation','Any sperm can fuse with any egg, multiplying the possible genotypes.']];
+chips('#va-c',VA.map(x=>x[0]),i=>$('#va-n').textContent=VA[i][1]);
+$('#ia-r').oninput=()=>{const n=+$('#ia-r').value;$('#ia-n').textContent=n;$('#ia-g').textContent=(2**n).toLocaleString();$('#ia-z').textContent=(2**(2*n)).toLocaleString()};$('#ia-r').oninput();
+let N,pop,hist,gen=0,tmr;const cv=$('#cv'),cx=cv.getContext('2d');
+function init(){N=+$('#sn').value;pop=Array.from({length:N},(_,i)=>i<N/2?1:0);hist=[.5];gen=0;draw()}
+function nextGen(){const s=+$('#ss').value/100,w=pop.map(a=>a?1-s:1),tot=w.reduce((x,y)=>x+y,0),np=[];for(let i=0;i<N;i++){let r=Math.random()*tot,j=0;while(r>w[j]&&j<N-1){r-=w[j];j++}np.push(pop[j])}pop=np;gen++;hist.push(pop.reduce((x,y)=>x+y,0)/N);draw()}
+function draw(){const cs=getComputedStyle(document.documentElement),tx=cs.getPropertyValue('--tx'),mt=cs.getPropertyValue('--mut');cx.clearRect(0,0,600,230);cx.fillStyle='#d9f99d';cx.fillRect(0,0,280,230);
+ const cols=Math.ceil(Math.sqrt(N*1.2)),rows=Math.ceil(N/cols),cw=Math.min(270/cols,220/rows);
+ pop.forEach((a,i)=>{cx.fillStyle=a?'#78350f':'#4ade80';cx.beginPath();cx.arc(8+(i%cols+.5)*cw,6+(Math.floor(i/cols)+.5)*cw,cw*.38,0,7);cx.fill();cx.strokeStyle='rgba(0,0,0,.3)';cx.stroke()});
+ cx.fillStyle=tx;cx.font='12px system-ui';cx.fillText('Generation '+gen,300,16);cx.fillText('Brown allele frequency',300,32);cx.strokeStyle=mt;cx.strokeRect(300,40,290,150);
+ cx.strokeStyle='#0f766e';cx.lineWidth=2;cx.beginPath();const sx=Math.max(20,hist.length-1);hist.forEach((p,i)=>{const x=300+i/sx*290,y=190-p*150;i?cx.lineTo(x,y):cx.moveTo(x,y)});cx.stroke();cx.lineWidth=1;
+ const p=hist[hist.length-1],H=2*p*(1-p);cx.fillStyle=mt;cx.fillText('Gene pool diversity',300,208);cx.strokeRect(430,198,160,12);cx.fillStyle='#0f766e';cx.fillRect(430,198,160*H*2,12);
+ $('#sim-n').textContent=p==0||p==1?`The ${p?'brown':'green'} allele is the only one left (fixed). Diversity has gone, so the population cannot adapt if selection pressures change. ${$('#ss').value>0?'':'This happened by chance alone: genetic drift.'}`:`Brown allele frequency ${p.toFixed(2)}. ${+$('#ss').value>0?'Selection removes the conspicuous brown allele over generations.':'No selection: frequency wanders by chance (drift), faster with small populations. Try N = 10.'}`}
+$('#s1').onclick=nextGen;$('#s20').onclick=()=>{clearInterval(tmr);let k=0;tmr=setInterval(()=>{nextGen();if(++k>=20)clearInterval(tmr)},120)};
+$('#sm').onclick=()=>{const i=Math.floor(Math.random()*N);pop[i]=1-pop[i];hist[hist.length-1]=pop.reduce((x,y)=>x+y,0)/N;draw()};
+$('#sr').onclick=()=>{clearInterval(tmr);init()};$('#sn').onchange=$('#sr').onclick;$('#ss').oninput=()=>{$('#ssv').textContent=$('#ss').value;draw()};init();
+
+/* ===== 5 speciation ===== */
+function alSvg(s){const L=[[110,90],[150,130],[90,140],[160,80],[120,115],[75,100],[140,160],[100,70]],R=L.map(([x,y])=>[x+330,y]);let o='<svg viewBox="0 0 600 230">';
+ const pos=(arr,side)=>arr.map(([x,y],i)=>{const x2=s==0?x+110:s==4?x+(side?-60:60):x,c=i%2?'#f59e0b':'#60a5fa',to=side?'#f97316':'#3b82f6';
+  return `<circle cx="${x2}" cy="${y}" r="9" fill="${c}" stroke="var(--tx)">${s>=2?`<animate attributeName="fill" to="${to}" begin="0s" dur="2s" fill="freeze"/>`:''}</circle>`}).join('');
+ if(s>=2)o+=`<rect x="0" y="0" width="290" height="190" fill="#bbf7d0" opacity=".4"/><rect x="310" y="0" width="290" height="190" fill="#fde68a" opacity=".5"/>`+TX(145,205,'Environment A (selection A, drift)','m')+TX(455,205,'Environment B (selection B, drift)','m');
+ if(s>=1&&s<4)o+=`<polygon points="290,190 300,20 310,190" fill="#7dd3fc" stroke="#0284c7"><animate attributeName="points" from="300,190 300,190 300,190" to="290,190 300,20 310,190" dur="1.5s" fill="freeze"/></polygon>`+TX(300,14,'barrier','m');
+ o+=pos(L,0)+pos(R,1);
+ if(s==0)o+=TX(300,215,'One population: one gene pool, individuals interbreed','m');
+ if(s==4)o+=`<text x="300" y="120" text-anchor="middle" font-size="40" fill="#dc2626">✖</text>`+TX(300,215,'Barrier gone: no interbreeding (reproductive isolation) → two species','t');
+ return o+'</svg>'}
+stepper('al',4,s=>$('#al-sv').innerHTML=alSvg(s),['One interbreeding population shares a single gene pool.','A geographic barrier (river, mountain, sea) splits the population. Gene flow stops: allopatric means "different place".','The separated populations face different selection pressures, and chance changes (genetic drift) differ too.','Allele frequencies diverge over time. Mutations and selection accumulate separately.','If the groups meet again they can no longer interbreed or produce fertile offspring: reproductive isolation. They are now separate species.'],3200);
+const PT=[['Divergent evolution','Related species become increasingly different over time because of different selection pressures.'],['Adaptive radiation','A type of divergent evolution: one ancestral species gives rise to many species adapted to different environments or niches.'],['Convergent evolution','Unrelated species evolve similar traits because they face similar selection pressures (e.g. shark and dolphin body shapes).']];
+const fish=(x,y,c)=>`<ellipse cx="${x}" cy="${y}" rx="34" ry="13" fill="${c}" stroke="var(--tx)"/><polygon points="${x-34},${y} ${x-52},${y-12} ${x-52},${y+12}" fill="${c}" stroke="var(--tx)"/>`;
+chips('#pt-c',PT.map(x=>x[0]),i=>{let s='<svg viewBox="0 0 600 220">';
+ if(i==0)s+=`<circle cx="60" cy="110" r="14" fill="#a3a3a3"/><path d="M74 110 L250 60 M74 110 L250 160 M250 60 L430 30 M250 60 L430 90 M250 160 L430 140 M250 160 L430 190" stroke="var(--mut)" stroke-width="3" fill="none"/>`+[[250,60,'#60a5fa',8],[250,160,'#f59e0b',8],[430,30,'#2563eb',14],[430,90,'#38bdf8',14],[430,140,'#ea580c',14],[430,190,'#facc15',14]].map(([x,y,c,r])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${c}"/>`).join('')+TX(60,140,'ancestor','m')+TX(300,215,'more time → more difference','m');
+ if(i==1){s+=`<circle cx="80" cy="110" r="16" fill="#a3a3a3"/>`+TX(80,142,'ancestor','m');['seed-eater','insect-eater','nectar-feeder','fruit-eater','ground forager'].forEach((n,k)=>{const y=25+k*42;s+=`<line x1="96" y1="110" x2="330" y2="${y}" stroke="var(--mut)" stroke-width="2"/><circle cx="345" cy="${y}" r="12" fill="${['#facc15','#f87171','#c084fc','#4ade80','#fb923c'][k]}"/>`+TX(365,y+4,n+' (niche '+(k+1)+')','t','start')})}
+ if(i==2)s+=`<polygon points="40,40 80,40 60,80" fill="#a78bfa"/><rect x="40" y="150" width="40" height="40" fill="#fb7185"/>${TX(60,205,'unrelated ancestors','m')}<path d="M90 60 L300 85 M90 170 L300 135" stroke="var(--mut)" stroke-width="2" stroke-dasharray="4 4"/>${fish(380,80,'#94a3b8')}${fish(380,145,'#94a3b8')}${TX(500,84,'shark','t')}${TX(500,149,'dolphin','t')}${TX(380,205,'similar environment → similar body shape','m')}`;
+ $('#pt-sv').innerHTML=s+'</svg>';$('#pt-n').textContent=PT[i][1]});
+
+/* ===== 6 succession + extinction ===== */
+let sty=0;const SL=[['Bare rock','Lichens and moss (pioneers)','Grasses and herbs','Shrubs','Trees (mature community)'],['After disturbance (soil remains)','Grasses and weeds','Herbs and shrubs','Young trees','Mature community']],LVL=[[0,1,2,3,5],[0,2,3,4,5]],SOIL=[[0,3,8,14,22],[20,22,24,26,28]];
+function suSvg(){const k=+$('#su-r').value,l=LVL[sty][k],d=SOIL[sty][k];let s='<svg viewBox="0 0 600 220"><rect width="600" height="220" fill="#e0f2fe"/><rect y="170" width="600" height="50" fill="#78716c"/>';
+ s+=`<rect y="${170-d}" width="600" height="${d}" fill="#7c4a1e"/>`;const gy=170-d;
+ if(l==0&&sty==1)for(let i=0;i<8;i++)s+=`<rect x="${50+i*70}" y="${gy-22}" width="6" height="22" fill="#1c1917"/>`;
+ if(l>=1)for(let i=0;i<12;i++)s+=`<ellipse cx="${30+i*48}" cy="${gy-2}" rx="14" ry="4" fill="${i%2?'#a3e635':'#fcd34d'}"/>`;
+ if(l>=2)for(let i=0;i<30;i++)s+=`<path d="M${15+i*19} ${gy} l3 -16 l3 16" stroke="#16a34a" stroke-width="2" fill="none"/>`;
+ if(l>=3)for(let i=0;i<6;i++)s+=`<circle cx="${60+i*100}" cy="${gy-14}" r="14" fill="#15803d"/>`;
+ if(l>=4)for(let i=0;i<3;i++)s+=`<rect x="${130+i*170}" y="${gy-50}" width="8" height="50" fill="#92400e"/><circle cx="${134+i*170}" cy="${gy-60}" r="${l==4?20:34}" fill="#166534"/>`;
+ $('#su-sv').innerHTML=s+'</svg>';$('#su-l').textContent=SL[sty][k];
+ $('#su-n').textContent=(sty?'Secondary succession: a community was disturbed (fire, flood, clearing) but soil, seeds and roots remain, so change is faster. ':'Primary succession: starts with little or no soil. Pioneer species such as lichens break down rock and add organic matter, forming soil. ')+'Species composition changes gradually over time.'}
+chips('#su-c',['Primary succession','Secondary succession'],i=>{sty=i;suSvg()});$('#su-r').oninput=suSvg;
+const TR={lo:Array(12).fill(.5).map((v,i)=>v+(i%3-1)*.02),hi:Array.from({length:12},(_,i)=>.05+i*.08)};
+function ex(){const e=+$('#ex-r').value/100;$('#ex-v').textContent=e<.55?'none':e<.8?'moderate':'severe';
+ [['lo','#ex-lo','#ex-lc'],['hi','#ex-hi','#ex-hc']].forEach(([k,a,c])=>{let n=0;$(a).innerHTML=TR[k].map(t=>{const ok=Math.abs(t-e)<.2;n+=ok;return `<span class="pill ${ok?'':'dead'}" style="background:hsl(${t*240},70%,55%)"></span>`}).join('');$(c).textContent=n?`${n} of 12 survive and can reproduce`:'0 of 12: extinct'})}
+$('#ex-r').oninput=ex;ex();
+const HU=[['Climate change','Shifting temperature and rainfall create new selection pressures faster than most species can adapt, especially those with little genetic variation.'],['Habitat destruction','Smaller, fragmented populations lose genetic diversity through drift and cannot adapt, raising extinction risk.'],['Pollution','Pollutants act as strong selection pressures and can kill sensitive populations, reducing biodiversity.'],['Ethics','Maintaining biodiversity is an ethical issue: losses have long-term biological and environmental consequences, and humans have a responsibility to help prevent extinction.']];
+chips('#hu-c',HU.map(x=>x[0]),i=>$('#hu-n').textContent=HU[i][1]);
+suSvg();tab(0);
+</script></body></html>
